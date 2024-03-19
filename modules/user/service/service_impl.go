@@ -64,7 +64,7 @@ func (s *tokenService) GenerateGuestToken(msisdn string) (string, error) {
 		"sub":    0,
 		"msisdn": msisdn,
 		"rid":    0,
-		"exp":    time.Now().Add(time.Hour * 24).Unix(), // Token expires in 24 hours
+		"exp":    time.Now().Add(time.Hour).Unix(),
 	})
 
 	// Sign the token with the secret key
