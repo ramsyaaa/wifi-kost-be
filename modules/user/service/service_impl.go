@@ -31,7 +31,7 @@ func (s *service) FindByMsisdn(ctx context.Context, msisdn string) (*models.User
 	return s.repo.FindByMsisdn(ctx, msisdn)
 }
 
-func (s *tokenService) GenerateToken(user *models.User) (string, error) {
+func (s *tokenService) GenerateToken(user *models.User, guest_house_id int) (string, error) {
 	var rid int
 	switch user.Role {
 	case "owner":
@@ -43,10 +43,11 @@ func (s *tokenService) GenerateToken(user *models.User) (string, error) {
 	}
 	// Create a new JWT token with the user's ID as the "sub" claim and set the expiry time
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub":    user.ID,
-		"msisdn": user.Msisdn,
-		"rid":    rid,
-		"exp":    time.Now().Add(time.Hour * 24).Unix(), // Token expires in 24 hours
+		"sub":            user.ID,
+		"msisdn":         user.Msisdn,
+		"guest_house_id": guest_house_id,
+		"rid":            rid,
+		"exp":            time.Now().Add(time.Hour * 24).Unix(), // Token expires in 24 hours
 	})
 
 	// Sign the token with the secret key
@@ -58,13 +59,14 @@ func (s *tokenService) GenerateToken(user *models.User) (string, error) {
 	return tokenString, nil
 }
 
-func (s *tokenService) GenerateGuestToken(msisdn string) (string, error) {
+func (s *tokenService) GenerateGuestToken(msisdn string, guest_house_id int) (string, error) {
 	// Create a new JWT token with the user's ID as the "sub" claim and set the expiry time
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub":    0,
-		"msisdn": msisdn,
-		"rid":    0,
-		"exp":    time.Now().Add(time.Hour).Unix(),
+		"sub":            0,
+		"msisdn":         msisdn,
+		"guest_house_id": guest_house_id,
+		"rid":            0,
+		"exp":            time.Now().Add(time.Hour).Unix(),
 	})
 
 	// Sign the token with the secret key

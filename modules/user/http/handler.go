@@ -23,14 +23,16 @@ func NewUserHandler(service service.UserService, tokenService service.TokenServi
 
 func (h *UserHandler) Login(c *fiber.Ctx) error {
 	type LoginRequest struct {
-		Msisdn   string `json:"msisdn"`
-		Password string `json:"password"`
+		Msisdn       string `json:"msisdn"`
+		Password     string `json:"password"`
+		GuestHouseID int    `json:"guest_house_id"`
 	}
 
 	var req LoginRequest
 	if err := c.BodyParser(&req); err != nil {
 		return fiber.ErrBadRequest
 	}
+	guest_house_id := req.GuestHouseID
 
 	// Authenticate the user
 	user, err := h.service.FindByMsisdn(c.Context(), req.Msisdn)
@@ -50,7 +52,7 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 	}
 
 	// Passwords match, create a JWT token for the user
-	tokenString, err := h.tokenService.GenerateToken(user)
+	tokenString, err := h.tokenService.GenerateToken(user, guest_house_id)
 	if err != nil {
 		return fiber.ErrInternalServerError
 	}
@@ -66,7 +68,8 @@ func (h *UserHandler) Logout(c *fiber.Ctx) error {
 
 func (h *UserHandler) Register(c *fiber.Ctx) error {
 	type RegisterRequest struct {
-		Msisdn string `json:"msisdn"`
+		Msisdn       string `json:"msisdn"`
+		GuestHouseID int    `json:"guest_house_id"`
 	}
 	var req RegisterRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -74,6 +77,7 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 	}
 
 	msisdn := req.Msisdn
+	guest_house_id := req.GuestHouseID
 	user, err := h.service.FindByMsisdn(c.Context(), msisdn)
 	if err != nil {
 		return err
@@ -86,7 +90,7 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(response)
 	}
 
-	tokenString, err := h.tokenService.GenerateGuestToken(msisdn)
+	tokenString, err := h.tokenService.GenerateGuestToken(msisdn, guest_house_id)
 	if err != nil {
 		return fiber.ErrInternalServerError
 	}

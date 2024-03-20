@@ -12,8 +12,8 @@ type UserService interface {
 }
 
 type TokenService interface {
-	GenerateToken(user *models.User) (string, error)
-	GenerateGuestToken(msisdn string) (string, error)
+	GenerateToken(user *models.User, guest_house_id int) (string, error)
+	GenerateGuestToken(msisdn string, guest_house_id int) (string, error)
 }
 
 var ErrInvalidCredentials = errors.New("invalid credentials")

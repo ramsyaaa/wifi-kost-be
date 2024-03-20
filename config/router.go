@@ -23,6 +23,7 @@ func Route(db *gorm.DB) {
 	api := fiber.New()
 
 	routes.UserRouter(api, db)
+	routes.GuestHouseRouter(api, db)
 
 	// Mount the "api/v1" group under the main app
 	app.Mount("/api/v1", api)
