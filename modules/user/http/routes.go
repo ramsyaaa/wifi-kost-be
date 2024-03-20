@@ -10,6 +10,6 @@ func UserRoutes(app *fiber.App, handler *UserHandler) {
 
 	app.Post("/login", handler.Login)
 	app.Post("/register", handler.Register)
-	app.Get("/check-guest", handler.CheckGuest)
+	app.Post("/check-guest", handler.CheckGuest)
 	app.Post("/logout", middleware.AuthMiddleware(), handler.Logout)
 }
