@@ -44,6 +44,7 @@ func (s *tokenService) GenerateToken(user *models.User, guest_house_id int) (str
 	// Create a new JWT token with the user's ID as the "sub" claim and set the expiry time
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub":            user.ID,
+		"name":           user.Name,
 		"msisdn":         user.Msisdn,
 		"guest_house_id": guest_house_id,
 		"rid":            rid,
