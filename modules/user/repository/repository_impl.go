@@ -27,3 +27,8 @@ func (r *repository) FindByMsisdn(ctx context.Context, msisdn string) (*models.U
 
 	return user, err
 }
+
+func (r *repository) CreateUser(ctx context.Context, user *models.User) error {
+	err := r.db.WithContext(ctx).Create(user).Error
+	return err
+}

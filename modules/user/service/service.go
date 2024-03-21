@@ -9,6 +9,7 @@ import (
 
 type UserService interface {
 	FindByMsisdn(ctx context.Context, msisdn string) (*models.User, error)
+	CreateUser(ctx context.Context, msisdn string) (*models.User, error)
 }
 
 type TokenService interface {

@@ -2,12 +2,14 @@ package service
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"wifi_kost_be/models"
 	"wifi_kost_be/modules/user/repository"
 
 	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type service struct {
@@ -88,6 +90,40 @@ func (s *service) Login(ctx context.Context, msisdn, password string) (*models.U
 
 	if user == nil || user.Password != password {
 		return nil, ErrInvalidCredentials
+	}
+
+	return user, nil
+}
+
+func (s *service) CreateUser(ctx context.Context, msisdn string) (*models.User, error) {
+	// Check if the user already exists
+	user, err := s.repo.FindByMsisdn(ctx, msisdn)
+	if err != nil {
+		return nil, err
+	}
+	if user != nil {
+		return nil, errors.New("user already exists")
+	}
+
+	// Generate hashed password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create the user with default password
+	user = &models.User{
+		Msisdn:    msisdn,
+		Role:      "user",
+		Password:  string(hashedPassword),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	// Save the user to the database
+	err = s.repo.CreateUser(ctx, user)
+	if err != nil {
+		return nil, err
 	}
 
 	return user, nil

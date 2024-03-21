@@ -100,6 +100,12 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
 
+	_, err = h.service.CreateUser(c.Context(), msisdn)
+	if err != nil {
+		response := helper.APIResponse("Failed to create user", http.StatusInternalServerError, "Error", nil)
+		return c.Status(http.StatusInternalServerError).JSON(response)
+	}
+
 	response := helper.APIResponse("User registered successfully", http.StatusOK, "OK", tokenString)
 	return c.Status(http.StatusOK).JSON(response)
 }
