@@ -6,6 +6,6 @@ import (
 
 func PackageRoutes(app *fiber.App, handler *PackageHandler) {
 
-	app.Get("/package/list", handler.GetPackage)
+	app.Post("/package/list", handler.GetPackage)
 	app.Post("/package/detail", handler.GetPackageDetail)
 }
