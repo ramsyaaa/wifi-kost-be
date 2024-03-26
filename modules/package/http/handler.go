@@ -17,7 +17,20 @@ func NewPackageHandler(service service.PackageService) *PackageHandler {
 }
 
 func (h *PackageHandler) GetPackage(c *fiber.Ctx) error {
-	guestHouses, err := h.service.GetPackage(c.Context())
+	type Request struct {
+		IsManagedService bool `json:"is_managed_service"`
+	}
+
+	// Parse the JSON request
+	var req Request
+	if err := c.BodyParser(&req); err != nil {
+		response := helper.APIResponse("Invalid JSON request", http.StatusBadRequest, "Error", nil)
+		return c.Status(http.StatusBadRequest).JSON(response)
+	}
+
+	// Get the is_managed_service from the request
+	is_managed_service := req.IsManagedService
+	guestHouses, err := h.service.GetPackage(c.Context(), is_managed_service)
 	if err != nil {
 		// Handle the error
 		response := helper.APIResponse("Failed to retrieve packages", http.StatusInternalServerError, "Error", nil)

@@ -18,3 +18,7 @@ func NewGuestHouseService(repo repository.GuestHouseRepository) GuestHouseServic
 func (s *service) GetGuestHouse(ctx context.Context) ([]*models.GuestHouse, error) {
 	return s.repo.GetGuestHouse(ctx)
 }
+
+func (s *service) GetGuestHouseDetail(ctx context.Context, guest_house_id int) (*models.GuestHouse, error) {
+	return s.repo.GetGuestHouseDetail(ctx, guest_house_id)
+}

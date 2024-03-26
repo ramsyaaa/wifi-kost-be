@@ -27,3 +27,14 @@ func (r *repository) GetGuestHouse(ctx context.Context) ([]*models.GuestHouse, e
 
 	return guestHouses, err
 }
+
+func (r *repository) GetGuestHouseDetail(ctx context.Context, guest_house_id int) (*models.GuestHouse, error) {
+	var guestHouse *models.GuestHouse
+	err := r.db.WithContext(ctx).Where("id = ?", guest_house_id).First(&guestHouse).Error
+
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+
+	return guestHouse, err
+}

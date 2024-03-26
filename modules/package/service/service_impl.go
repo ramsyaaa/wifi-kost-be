@@ -15,8 +15,8 @@ func NewPackageService(repo repository.PackageRepository) PackageService {
 	return &service{repo: repo}
 }
 
-func (s *service) GetPackage(ctx context.Context) ([]*models.Package, error) {
-	return s.repo.GetPackage(ctx)
+func (s *service) GetPackage(ctx context.Context, is_managed_service bool) ([]*models.Package, error) {
+	return s.repo.GetPackage(ctx, is_managed_service)
 }
 
 func (s *service) GetPackageDetail(ctx context.Context, package_id int) (*models.Package, error) {

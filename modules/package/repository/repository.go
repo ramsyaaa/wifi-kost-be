@@ -7,6 +7,6 @@ import (
 )
 
 type PackageRepository interface {
-	GetPackage(ctx context.Context) ([]*models.Package, error)
+	GetPackage(ctx context.Context, is_managed_service bool) ([]*models.Package, error)
 	GetPackageDetail(ctx context.Context, package_id int) (*models.Package, error)
 }

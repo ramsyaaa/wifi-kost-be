@@ -17,9 +17,9 @@ func NewPackageRepository(db *gorm.DB) PackageRepository {
 	return &repository{db: db}
 }
 
-func (r *repository) GetPackage(ctx context.Context) ([]*models.Package, error) {
+func (r *repository) GetPackage(ctx context.Context, is_managed_service bool) ([]*models.Package, error) {
 	var packages []*models.Package
-	err := r.db.WithContext(ctx).Find(&packages).Error
+	err := r.db.WithContext(ctx).Where("is_managed_service_package = ?", is_managed_service).Find(&packages).Error
 
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
