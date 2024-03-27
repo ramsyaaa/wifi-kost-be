@@ -2,6 +2,7 @@ package http
 
 import (
 	"net/http"
+	"strings"
 	"time"
 	"wifi_kost_be/helper"
 	"wifi_kost_be/modules/user/service"
@@ -33,9 +34,18 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 		return fiber.ErrBadRequest
 	}
 	guest_house_id := req.GuestHouseID
+	msisdn := req.Msisdn
 
+	// Validate the format of the msisdn
+	if !isValidMsisdnFormat(msisdn) {
+		response := helper.APIResponse("Invalid msisdn format", http.StatusBadRequest, "Error", nil)
+		return c.Status(http.StatusBadRequest).JSON(response)
+	}
+
+	// Format the msisdn to 628xx if it's in 08xx format
+	msisdn = formatMsisdn(msisdn)
 	// Authenticate the user
-	user, err := h.service.FindByMsisdn(c.Context(), req.Msisdn)
+	user, err := h.service.FindByMsisdn(c.Context(), msisdn)
 	if err != nil {
 		return err
 	}
@@ -78,13 +88,22 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 
 	msisdn := req.Msisdn
 	guest_house_id := req.GuestHouseID
+
+	// Validate the format of the msisdn
+	if !isValidMsisdnFormat(msisdn) {
+		response := helper.APIResponse("Invalid msisdn format", http.StatusBadRequest, "Error", nil)
+		return c.Status(http.StatusBadRequest).JSON(response)
+	}
+
+	// Format the msisdn to 628xx if it's in 08xx format
+	msisdn = formatMsisdn(msisdn)
+
 	user, err := h.service.FindByMsisdn(c.Context(), msisdn)
 	if err != nil {
 		return err
 	}
 
 	// Check if the user's msisdn is already registered
-
 	if user != nil {
 		response := helper.APIResponse("User Already Exist", http.StatusNotFound, "Error", nil)
 		return c.Status(http.StatusBadRequest).JSON(response)
@@ -95,7 +114,7 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 		return fiber.ErrInternalServerError
 	}
 
-	if err := h.redisClient.Set(c.Context(), msisdn, tokenString, time.Hour); err == nil {
+	if err := h.redisClient.Set(c.Context(), msisdn, tokenString, time.Hour); err != nil {
 		response := helper.APIResponse("Failed to register user", http.StatusInternalServerError, "Error", nil)
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
@@ -142,4 +161,15 @@ func (h *UserHandler) CheckGuest(c *fiber.Ctx) error {
 	// Data exists in Redis
 	response := helper.APIResponse("Data found in Redis", http.StatusOK, "OK", value)
 	return c.Status(http.StatusOK).JSON(response)
+}
+
+func isValidMsisdnFormat(msisdn string) bool {
+	return strings.HasPrefix(msisdn, "08") || strings.HasPrefix(msisdn, "628")
+}
+
+func formatMsisdn(msisdn string) string {
+	if strings.HasPrefix(msisdn, "08") {
+		return "62" + msisdn[1:]
+	}
+	return msisdn
 }
