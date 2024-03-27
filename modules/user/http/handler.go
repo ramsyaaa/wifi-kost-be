@@ -105,16 +105,17 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 
 	// Check if the user's msisdn is already registered
 	if user != nil {
-		response := helper.APIResponse("User Already Exist", http.StatusNotFound, "Error", nil)
+		response := helper.APIResponse("User Already Exist", http.StatusBadRequest, "Error", nil)
 		return c.Status(http.StatusBadRequest).JSON(response)
 	}
 
 	tokenString, err := h.tokenService.GenerateGuestToken(msisdn, guest_house_id)
+
 	if err != nil {
 		return fiber.ErrInternalServerError
 	}
 
-	if err := h.redisClient.Set(c.Context(), msisdn, tokenString, time.Hour); err != nil {
+	if err := h.redisClient.Set(c.Context(), msisdn, tokenString, time.Hour); err == nil {
 		response := helper.APIResponse("Failed to register user", http.StatusInternalServerError, "Error", nil)
 		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
