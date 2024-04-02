@@ -17,9 +17,9 @@ func NewUserSubscriptionRepository(db *gorm.DB) UserSubscriptionRepository {
 	return &repository{db: db}
 }
 
-func (r *repository) GetUserSubscription(ctx context.Context, user_id int) (*models.UserSubscription, error) {
+func (r *repository) GetUserSubscription(ctx context.Context, user_id int, guest_house_id int) (*models.UserSubscription, error) {
 	var packages *models.UserSubscription
-	err := r.db.WithContext(ctx).Where("user_id = ?", user_id).Where("is_active = ?", true).Last(&packages).Error
+	err := r.db.WithContext(ctx).Where("user_id = ?", user_id).Where("guest_house_id = ?", guest_house_id).Where("is_active = ?", true).Last(&packages).Error
 
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil

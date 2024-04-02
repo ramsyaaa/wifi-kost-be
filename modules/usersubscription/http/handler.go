@@ -18,7 +18,8 @@ func NewUserSubscriptionHandler(service service.UserSubscriptionService) *UserSu
 
 func (h *UserSubscriptionHandler) GetUserSubscription(c *fiber.Ctx) error {
 	type Request struct {
-		UserID int `json:"user_id"`
+		UserID       int `json:"user_id"`
+		GuestHouseID int `json:"guest_house_id"`
 	}
 
 	// Parse the JSON request
@@ -30,7 +31,8 @@ func (h *UserSubscriptionHandler) GetUserSubscription(c *fiber.Ctx) error {
 
 	// Get the user_id from the request
 	user_id := req.UserID
-	guestHouses, err := h.service.GetUserSubscription(c.Context(), user_id)
+	guest_house_id := req.GuestHouseID
+	guestHouses, err := h.service.GetUserSubscription(c.Context(), user_id, guest_house_id)
 
 	if err != nil {
 		// Handle the error

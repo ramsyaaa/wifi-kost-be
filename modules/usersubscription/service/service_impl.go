@@ -15,6 +15,6 @@ func NewUserSubscriptionService(repo repository.UserSubscriptionRepository) User
 	return &service{repo: repo}
 }
 
-func (s *service) GetUserSubscription(ctx context.Context, user_id int) (*models.UserSubscription, error) {
-	return s.repo.GetUserSubscription(ctx, user_id)
+func (s *service) GetUserSubscription(ctx context.Context, user_id int, guest_house_id int) (*models.UserSubscription, error) {
+	return s.repo.GetUserSubscription(ctx, user_id, guest_house_id)
 }
