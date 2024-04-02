@@ -17,6 +17,10 @@ type Transaction struct {
 	UpdatedAt         time.Time `json:"updated_at"`
 }
 
+type UserRequest struct {
+	Msisdn string `json:"msisdn"`
+}
+
 func (Transaction) TableName() string {
 	return "transactions"
 }

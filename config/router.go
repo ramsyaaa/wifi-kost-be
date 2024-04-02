@@ -25,6 +25,8 @@ func Route(db *gorm.DB) {
 	routes.UserRouter(api, db)
 	routes.GuestHouseRouter(api, db)
 	routes.PackageRouter(api, db)
+	routes.TransactionRouter(api, db)
+	routes.UserSubscriptionRouter(api, db)
 
 	// Mount the "api/v1" group under the main app
 	app.Mount("/api/v1", api)
