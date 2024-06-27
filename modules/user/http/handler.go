@@ -1,9 +1,12 @@
 package http
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
-	"time"
 	"wifi_kost_be/helper"
 	"wifi_kost_be/modules/user/service"
 
@@ -87,7 +90,7 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 	}
 
 	msisdn := req.Msisdn
-	guest_house_id := req.GuestHouseID
+	guestHouseID := req.GuestHouseID
 
 	// Validate the format of the msisdn
 	if !isValidMsisdnFormat(msisdn) {
@@ -98,33 +101,65 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 	// Format the msisdn to 628xx if it's in 08xx format
 	msisdn = formatMsisdn(msisdn)
 
-	user, err := h.service.FindByMsisdn(c.Context(), msisdn)
+	// Check if the msisdn is already registered with the external API
+	externalCheckURL := fmt.Sprintf("https://g2-radius-api.aneta.my.id/user-username/%s", msisdn)
+	checkResp, err := http.Get(externalCheckURL)
 	if err != nil {
-		return err
+		return fiber.ErrInternalServerError
 	}
+	defer checkResp.Body.Close()
 
-	// Check if the user's msisdn is already registered
-	if user != nil {
-		response := helper.APIResponse("User Already Exist", http.StatusBadRequest, "Error", nil)
-		return c.Status(http.StatusBadRequest).JSON(response)
-	}
-
-	tokenString, err := h.tokenService.GenerateGuestToken(msisdn, guest_house_id)
-
+	// Read the response from the external API
+	checkBody, err := ioutil.ReadAll(checkResp.Body)
 	if err != nil {
 		return fiber.ErrInternalServerError
 	}
 
-	if err := h.redisClient.Set(c.Context(), msisdn, tokenString, time.Hour); err == nil {
-		response := helper.APIResponse("Failed to register user", http.StatusInternalServerError, "Error", nil)
-		return c.Status(http.StatusInternalServerError).JSON(response)
+	// Parse the response
+	var existingUsers []interface{}
+	if err := json.Unmarshal(checkBody, &existingUsers); err != nil {
+		return fiber.ErrInternalServerError
 	}
 
-	// _, err = h.service.CreateUser(c.Context(), msisdn)
-	// if err != nil {
-	// 	response := helper.APIResponse("Failed to create user", http.StatusInternalServerError, "Error", nil)
-	// 	return c.Status(http.StatusInternalServerError).JSON(response)
-	// }
+	// If the response is not empty, the user already exists
+	if len(existingUsers) > 0 {
+		response := helper.APIResponse("User already exists", http.StatusBadRequest, "Error", nil)
+		return c.Status(http.StatusBadRequest).JSON(response)
+	}
+
+	// Prepare the request payload for the external API
+	externalRequest := map[string]string{
+		"username":  msisdn,
+		"value":     "password",
+		"firstname": "-",
+		"lastname":  "-",
+		"groupname": "wifi-kost",
+	}
+
+	externalRequestBody, err := json.Marshal(externalRequest)
+	if err != nil {
+		return fiber.ErrInternalServerError
+	}
+
+	// Call the external API to register the user
+	externalAPIURL := "https://g2-radius-api.aneta.my.id/user-create"
+	resp, err := http.Post(externalAPIURL, "application/json", bytes.NewBuffer(externalRequestBody))
+	if err != nil {
+		return fiber.ErrInternalServerError
+	}
+	defer resp.Body.Close()
+
+	// Check the response from the external API
+	if resp.StatusCode != http.StatusOK {
+		response := helper.APIResponse("Failed to register user with external service", resp.StatusCode, "Error", nil)
+		return c.Status(resp.StatusCode).JSON(response)
+	}
+
+	// Generate the token
+	tokenString, err := h.tokenService.GenerateGuestToken(msisdn, guestHouseID)
+	if err != nil {
+		return fiber.ErrInternalServerError
+	}
 
 	response := helper.APIResponse("User registered successfully", http.StatusOK, "OK", tokenString)
 	return c.Status(http.StatusOK).JSON(response)
