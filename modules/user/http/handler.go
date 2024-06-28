@@ -101,6 +101,17 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 	// Format the msisdn to 628xx if it's in 08xx format
 	msisdn = formatMsisdn(msisdn)
 
+	// Check if the user's msisdn is already registered in the database
+	user, err := h.service.FindByMsisdn(c.Context(), msisdn)
+	if err != nil {
+		response := helper.APIResponse("Failed to get user", http.StatusInternalServerError, "Error", nil)
+		return c.Status(http.StatusInternalServerError).JSON(response)
+	}
+	if user != nil {
+		response := helper.APIResponse("User already exists", http.StatusBadRequest, "Error", nil)
+		return c.Status(http.StatusBadRequest).JSON(response)
+	}
+
 	// Check if the msisdn is already registered with the external API
 	externalCheckURL := fmt.Sprintf("https://g2-radius-api.aneta.my.id/user-username/%s", msisdn)
 	checkResp, err := http.Get(externalCheckURL)
@@ -123,8 +134,15 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 
 	// If the response is not empty, the user already exists
 	if len(existingUsers) > 0 {
-		response := helper.APIResponse("User already exists", http.StatusBadRequest, "Error", nil)
+		response := helper.APIResponse("User already exists in external service", http.StatusBadRequest, "Error", nil)
 		return c.Status(http.StatusBadRequest).JSON(response)
+	}
+
+	// Create the user in the database
+	user, err = h.service.CreateUser(c.Context(), msisdn)
+	if err != nil {
+		response := helper.APIResponse("Failed to create user in database", http.StatusInternalServerError, "Error", nil)
+		return c.Status(http.StatusInternalServerError).JSON(response)
 	}
 
 	// Prepare the request payload for the external API
@@ -156,7 +174,7 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 	}
 
 	// Generate the token
-	tokenString, err := h.tokenService.GenerateGuestToken(msisdn, guestHouseID)
+	tokenString, err := h.tokenService.GenerateToken(user, guestHouseID)
 	if err != nil {
 		return fiber.ErrInternalServerError
 	}
