@@ -174,7 +174,7 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 	}
 
 	// Generate the token
-	tokenString, err := h.tokenService.GenerateToken(user, guestHouseID)
+	tokenString, err := h.tokenService.GenerateGuestToken(msisdn, guestHouseID)
 	if err != nil {
 		return fiber.ErrInternalServerError
 	}
