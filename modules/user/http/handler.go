@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 	"wifi_kost_be/helper"
 	"wifi_kost_be/modules/user/service"
 
@@ -179,6 +180,11 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 		return fiber.ErrInternalServerError
 	}
 
+	if err := h.redisClient.Set(c.Context(), msisdn, tokenString, time.Hour); err == nil {
+		response := helper.APIResponse("Failed to register user", http.StatusInternalServerError, "Error", nil)
+		return c.Status(http.StatusInternalServerError).JSON(response)
+	}
+
 	response := helper.APIResponse("User registered successfully", http.StatusOK, "OK", tokenString)
 	return c.Status(http.StatusOK).JSON(response)
 }
@@ -199,21 +205,21 @@ func (h *UserHandler) CheckGuest(c *fiber.Ctx) error {
 	// Get the key from the request
 	key := req.Key
 
-	// // Get data from Redis
-	// value, err := h.redisClient.Get(c.Context(), key).Result()
-	// if err != nil {
-	// 	if err == redis.Nil {
-	// 		// Key does not exist in Redis
-	// 		response := helper.APIResponse("Key does not exist in Redis", http.StatusNotFound, "Error", nil)
-	// 		return c.Status(http.StatusNotFound).JSON(response)
-	// 	}
-	// 	// Other error occurred
-	// 	response := helper.APIResponse("Failed to get data from Redis", http.StatusInternalServerError, "Error", nil)
-	// 	return c.Status(http.StatusInternalServerError).JSON(response)
-	// }
+	// Get data from Redis
+	value, err := h.redisClient.Get(c.Context(), key).Result()
+	if err != nil {
+		if err == redis.Nil {
+			// Key does not exist in Redis
+			response := helper.APIResponse("Key does not exist in Redis", http.StatusNotFound, "Error", nil)
+			return c.Status(http.StatusNotFound).JSON(response)
+		}
+		// Other error occurred
+		response := helper.APIResponse("Failed to get data from Redis", http.StatusInternalServerError, "Error", nil)
+		return c.Status(http.StatusInternalServerError).JSON(response)
+	}
 
 	// Data exists in Redis
-	response := helper.APIResponse("Data found in Redis", http.StatusOK, "OK", key)
+	response := helper.APIResponse("Data found in Redis", http.StatusOK, "OK", value)
 	return c.Status(http.StatusOK).JSON(response)
 }
 
