@@ -84,9 +84,9 @@ func (h *TransactionHandler) CreateTransaction(c *fiber.Ctx) error {
 		}
 	} else {
 		// Create the user if it doesn't exist
-		user, err = h.service.CreateUser(c.Context(), request.Msisdn) // Assign value to existing user variable
+		user, err := h.service.FindByMsisdn(c.Context(), request.Msisdn)
 		if err != nil {
-			response := helper.APIResponse("Failed to create user", http.StatusInternalServerError, "Error", nil)
+			response := helper.APIResponse("Failed to get user", http.StatusInternalServerError, "Error", nil)
 			return c.Status(http.StatusInternalServerError).JSON(response)
 		}
 		req.UserID = user.ID
